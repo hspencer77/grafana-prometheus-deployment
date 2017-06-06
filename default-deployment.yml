@@ -1,0 +1,115 @@
+version: '2.1'
+
+volumes:
+  prometheus_data: {}
+  grafana_data: {}
+
+networks:
+  front-tier:
+    driver: bridge
+  back-tier:
+    driver: bridge
+
+services:
+  prometheus:
+    image: prom/prometheus
+    container_name: monitoring-prometheus
+    volumes:
+      - ./prometheus/:/etc/prometheus/
+      - prometheus_data:/prometheus
+    command:
+      - '-config.file=/etc/prometheus/prometheus.yml'
+      - '-storage.local.path=/prometheus'
+    expose:
+      - 9090
+    ports:
+      - "9090:9090"
+    links:
+      - cadvisor
+    depends_on:
+      - cadvisor
+    networks:
+      - back-tier
+      - front-tier
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet -O - http://localhost:9090/api/v1/targets && echo 'Prometheus Server is Up'"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    labels:
+      org.label-schema.group: "monitoring"
+      org.label-schema.application: "monitoring"
+
+  node-exporter:
+    container_name: monitoring-node-exporter
+    image: prom/node-exporter
+    volumes:
+      - /proc:/host/proc
+      - /sys:/host/sys
+      - /:/rootfs
+    command:
+      - '-collector.procfs=/host/proc'
+      - '-collector.sysfs=/host/sysfs'
+      - '-collector.filesystem.ignored-mount-points="^/(sys|proc|dev|host|etc)($$|/)"'
+    expose:
+      - 9100
+    networks:
+      - back-tier
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet -O - http://localhost:9100/metrics && echo 'Node Exporter is Up'"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    labels:
+      org.label-schema.group: "monitoring"
+      org.label-schema.application: "monitoring"
+
+  cadvisor:
+    container_name: monitoring-cadvisor
+    image: google/cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    expose:
+      - 8080
+    networks:
+      - back-tier
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet -O - http://localhost:8080/metrics && echo 'cAdvisor is Up'"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    labels:
+      org.label-schema.group: "monitoring"
+      org.label-schema.application: "monitoring"
+      
+  grafana:
+    container_name: monitoring-grafana
+    build: grafana
+    depends_on:
+      prometheus:
+       condition: service_healthy
+    links:
+      - prometheus
+    expose:
+      - 3000
+    ports:
+      - "80:3000"
+    volumes:
+      - ./dashboards/:/grafana-dashboards/
+      - grafana_data:/var/lib/grafana
+    env_file:
+      - config.monitoring 
+    networks:
+      - back-tier
+      - front-tier
+    healthcheck:
+      test: ["CMD-SHELL", "netstat -lpn | grep 3000 && echo 'Grafana is Up'"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    labels:
+      org.label-schema.group: "monitoring"
+      org.label-schema.application: "monitoring"
