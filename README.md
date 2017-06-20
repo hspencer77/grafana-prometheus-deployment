@@ -55,3 +55,25 @@ There are default dashboards associated with each deployment that show graphs an
 http://localhost:9090/graph
 ```
 
+## Clean Up
+
+To destroy the deployment, run the following command:
+```
+$ docker-compose -f default-deployment.yml down --rmi all -v
+Stopping monitoring-grafana ... done
+Stopping monitoring-prometheus ... done
+Stopping monitoring-cadvisor ... done
+Stopping monitoring-node-exporter ... done
+Removing monitoring-grafana ... done
+Removing monitoring-prometheus ... done
+Removing monitoring-cadvisor ... done
+Removing monitoring-node-exporter ... done
+Removing network grafanaprometheusdeployment_front-tier
+Removing network grafanaprometheusdeployment_back-tier
+Removing volume grafanaprometheusdeployment_prometheus_data
+Removing volume grafanaprometheusdeployment_grafana_data
+Removing image prom/node-exporter
+Removing image google/cadvisor
+Removing image prom/prometheus
+Removing image grafanaprometheusdeployment_grafana
+```
