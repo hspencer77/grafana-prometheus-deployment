@@ -8,15 +8,15 @@ Repository for monitoring infrastructure based off of grafana+prometheus contain
 
 An additional Compose file has been created - ```grafana-mysqld-deployment.yml``` - deploys the same environment, along with the following container applications:
 
-* mysql-server
+* [mysql-server](https://hub.docker.com/r/mysql/mysql-server/)
 * [mysqld-exporter](https://github.com/prometheus/mysqld_exporter)
 
 The second deployment provides better performance for Grafana when using a large number of dashboards.
 
 ## Prerequisites
 
-* Docker 1.13 or higher
-* Docker Compose
+* [Docker 1.13 or higher](https://docs.docker.com/engine/installation/)
+* [Docker Compose](https://docs.docker.com/compose/overview/)
 
 ## Deployment
 
